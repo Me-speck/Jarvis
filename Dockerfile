@@ -1,18 +1,20 @@
-# Base image with Python 3.8
-FROM python:3.8-slim
+FROM python:3.12-slim
 
-# Set working directory
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg build-essential cmake \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
+COPY requirements.txt requirements-model.txt requirements-voice.txt ./
+ARG INSTALL_MODEL_RUNTIME=0
+RUN pip install --no-cache-dir -r requirements.txt \
+    && if [ "$INSTALL_MODEL_RUNTIME" = 1 ]; then \
+        pip install --no-cache-dir -r requirements-model.txt -r requirements-voice.txt; \
+    fi
 
-# Copy the requirements.txt and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY app.py local_runtime.py ./
+COPY templates ./templates
+COPY static ./static
 
-# Copy the application code
-COPY . .
-
-# Expose the port on which the Flask app will run
 EXPOSE 5000
-
-# Run the application
-CMD ["python", "app.py"]
+CMD ["python", "-B", "app.py"]

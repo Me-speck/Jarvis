@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a101a">
+  <title>Jarvis · Command Center</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script type="module" src="{{ url_for('static', filename='console.js') }}"></script>
+</head>
+<body data-transcription="{{ transcription | tojson }}" data-speech="{{ speech | tojson }}">
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Jarvis home"><span class="brand-mark" aria-hidden="true">◈</span> JARVIS</a>
+    <nav class="top-actions" aria-label="Jarvis workspace">
+      <a href="{{ url_for('workbench') }}">Engineering workbench ↗</a>
+      <span class="environment"><span class="dot"></span>{{ 'Local AI configured' if conversation else 'Offline tools online' }}</span>
+    </nav>
+  </header>
+  <main>
+    <section class="intro">
+      <div><p class="eyebrow">PERSONAL ASSISTANT</p><h1>Command center</h1></div>
+      <div class="clock"><time id="clock"></time><span id="date"></span></div>
+    </section>
+    <div class="layout">
+      <section class="panel conversation" aria-label="Assistant">
+        <div class="panel-top assistant-top">
+          <h2>Assistant</h2>
+          <div class="voice-actions">
+            <span id="voice-indicator" aria-hidden="true" data-state="off"><i></i><i></i><i></i></span>
+            <button type="button" id="hands-free" aria-pressed="false">Start voice conversation</button>
+            <button type="button" id="speak" aria-pressed="false" title="Read replies when using typed commands">Voice off</button>
+          </div>
+        </div>
+        <div class="messages" id="messages" role="log" aria-live="polite">
+          <div class="welcome" id="welcome">
+            <div class="orb" aria-hidden="true"><div class="orb-center"></div></div>
+            <h3>How can I help?</h3>
+            <p>{{ 'Start a voice conversation to ask a question or give a command.' if conversation else 'Set a timer, capture a note, or organize your tasks.' }}</p>
+          </div>
+        </div>
+        <div class="composer">
+          <div class="suggestions" aria-label="Example commands">
+            <button type="button" data-draft="Set a timer for 5 minutes">Set a timer</button>
+            <button type="button" data-draft="Take note: ">Take a note</button>
+            <button type="button" data-draft="Add task: ">Add a task</button>
+          </div>
+          <form id="command-form">
+            <button type="button" id="mic" aria-label="Start voice input" title="Start voice input">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3m-3 0h6"/></svg>
+            </button>
+            <input id="command" aria-label="Command" placeholder="Type a command…" maxlength="2000" autocomplete="off" required>
+            <button type="submit" class="send" id="send">Send <span aria-hidden="true">↑</span></button>
+          </form>
+          <p id="status" role="status"></p>
+        </div>
+      </section>
+      <aside class="tools" aria-label="Workspace">
+        <section class="panel tool"><div class="panel-top"><h2>Timers</h2><span class="tool-icon" aria-hidden="true">◷</span></div><ul id="timers"></ul></section>
+        <section class="panel tool"><div class="panel-top"><h2>Tasks</h2><span class="tool-icon" aria-hidden="true">✓</span></div><ul id="tasks"></ul></section>
+        <section class="panel tool"><div class="panel-top"><h2>Notes</h2><span class="tool-icon" aria-hidden="true">▤</span></div><ul id="notes"></ul></section>
+      </aside>
+    </div>
+  </main>
+</body>
+</html>

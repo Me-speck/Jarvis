@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080e15">
+  <title>Jarvis · Engineering Workbench</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='workbench.css') }}">
+  <script type="module" src="{{ url_for('static', filename='workbench.js') }}"></script>
+</head>
+<body class="workbench">
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Jarvis home"><span class="brand-mark" aria-hidden="true">◈</span> JARVIS</a>
+    <nav class="top-actions" aria-label="Jarvis workspace">
+      <a href="/">Assistant</a>
+      <a href="/workbench" aria-current="page">Workbench</a>
+      <span class="environment"><span class="dot"></span>{{ 'Local AI available' if conversation else 'Offline tools online' }}</span>
+    </nav>
+  </header>
+  <main>
+    <div class="bench-heading">
+      <h1>Engineering workbench</h1>
+      <div class="bench-tabs" aria-label="Workbench panels">
+        <button type="button" data-view="design" aria-pressed="true" aria-controls="design">Design</button>
+        <button type="button" data-view="code" aria-pressed="false" aria-controls="code">Code</button>
+        <button type="button" data-view="assembly" aria-pressed="false" aria-controls="assembly">Assembly</button>
+      </div>
+    </div>
+    <section id="design" class="bench-grid" aria-label="Design">
+      <div class="design-tools">
+      <section class="frame viewport">
+        <div class="frame-bar"><h2>3D viewport</h2><span id="mesh-label">Beam prototype</span></div>
+        <div class="stage">
+          <canvas id="mesh-canvas" tabindex="0" aria-label="3D model. Drag or use arrow keys to orbit, plus and minus to zoom."></canvas>
+          <div class="stage-corner corner-top"></div><div class="stage-corner corner-bottom"></div>
+          <span class="stage-hint">Drag to orbit · Scroll to zoom</span>
+          <span class="axes" aria-hidden="true"><b>X</b><b>Y</b><b>Z</b></span>
+        </div>
+        <div class="frame-bar viewport-tools">
+          <div class="inline">
+            <label class="button upload">Open STL<input id="mesh-file" type="file" accept=".stl"></label>
+            <button id="export-stl" class="primary" type="button">↓ Export STL</button>
+          </div>
+          <div class="inline">
+            <button id="wireframe" type="button" aria-pressed="false">Wireframe</button>
+            <button id="reset-camera" type="button">Reset view</button>
+          </div>
+        </div>
+        <p id="mesh-status" class="notice" role="status"></p>
+      </section>
+        <section class="frame simulation">
+          <div class="frame-bar"><h2>Cantilever simulation</h2></div>
+          <form id="beam-form" class="tool-form">
+            <div class="fields">
+              <label>Length (mm)<input type="number" name="length" value="160" min="1" max="10000" step="any" required></label>
+              <label>Width (mm)<input type="number" name="width" value="44" min="1" max="10000" step="any" required></label>
+              <label>Height (mm)<input type="number" name="height" value="30" min="1" max="10000" step="any" required></label>
+              <label>Tip load (N)<input type="number" name="load" value="150" min="0" max="10000000" step="any" required></label>
+            </div>
+            <label>Material<select name="material" id="material">
+              <option value="aluminum">6061-T6 aluminum</option>
+              <option value="steel">Mild steel, nominal</option>
+              <option value="pla">PLA, illustrative bulk values</option>
+            </select></label>
+            <p id="material-info" class="help"></p>
+            <div class="inline"><button class="primary" type="submit">Run simulation</button><button id="show-beam" type="button">Show beam</button></div>
+            <p class="help">Rectangular beam, fixed at one end with a static tip load. Imported meshes are inspected separately.</p>
+          </form>
+          <dl class="metrics" aria-live="polite" id="beam-results">
+            <div><dt>Tip deflection</dt><dd id="deflection"></dd></div>
+            <div><dt>Max bending stress</dt><dd id="stress"></dd></div>
+            <div><dt>Estimated mass</dt><dd id="mass"></dd></div>
+            <div><dt>Yield / bending stress</dt><dd id="margin"></dd></div>
+          </dl>
+          <p id="simulation-note" class="notice" role="status"></p>
+          <details class="comparison">
+            <summary>Compare materials</summary>
+            <table>
+              <thead><tr><th scope="col">Preset</th><th scope="col">Deflection</th><th scope="col">Mass</th></tr></thead>
+              <tbody id="material-comparison"></tbody>
+            </table>
+          </details>
+        </section>
+      </div>
+      <aside class="design-tools" aria-label="Design tools">
+        <section class="frame part-panel">
+          <div class="frame-bar"><h2>Part builder</h2><span class="instrument-label">MM</span></div>
+          <form id="part-form" class="tool-form">
+            <label>Shape<select name="shape" id="part-shape">
+              <option value="tube" selected>Tube / washer</option>
+              <option value="block">Rectangular block</option>
+              <option value="cylinder">Solid cylinder</option>
+              <option value="taper">Tapered cylinder</option>
+            </select></label>
+            <div class="fields">
+              <label data-shapes="block">Length (mm)<input name="partLength" type="number" value="60" min="0.1" max="10000" step="any" required></label>
+              <label data-shapes="block">Width (mm)<input name="partWidth" type="number" value="40" min="0.1" max="10000" step="any" required></label>
+              <label data-shapes="tube cylinder taper">Outer diameter (mm)<input name="diameter" type="number" value="64" min="0.1" max="10000" step="any" required></label>
+              <label data-shapes="tube">Bore diameter (mm)<input name="bore" type="number" value="36" min="0.1" max="10000" step="any" required></label>
+              <label data-shapes="taper">Top diameter (mm)<input name="topDiameter" type="number" value="44" min="0.1" max="10000" step="any" required></label>
+              <label>Height (mm)<input name="partHeight" type="number" value="30" min="0.1" max="10000" step="any" required></label>
+              <label data-shapes="tube cylinder taper">Circle resolution<select name="segments">
+                <option value="32">32 sides</option>
+                <option value="64" selected>64 sides</option>
+                <option value="128">128 sides</option>
+              </select></label>
+            </div>
+            <button type="submit" class="primary">Build mesh</button>
+            <p id="part-status" class="notice" role="status"></p>
+          </form>
+        </section>
+        <section class="frame">
+          <div class="frame-bar"><h2>Mesh inspection</h2><span id="mesh-health" class="mesh-health"></span></div>
+          <dl class="metrics">
+            <div><dt>Bounds X × Y × Z</dt><dd id="bounds"></dd></div>
+            <div><dt>Triangles</dt><dd id="triangles"></dd></div>
+            <div><dt>Surface area</dt><dd id="area"></dd></div>
+            <div><dt>Open / non-manifold edges</dt><dd id="edge-counts"></dd></div>
+            <div><dt>Zero-area faces</dt><dd id="zero-faces"></dd></div>
+            <div><dt>Winding conflicts</dt><dd id="winding"></dd></div>
+            <div><dt>Estimated volume</dt><dd id="volume"></dd></div>
+          </dl>
+        </section>
+      </aside>
+    </section>
+    <section id="code" class="bench-grid code-grid" aria-label="Code" hidden>
+      <section class="frame">
+        <div class="frame-bar"><h2>Project files</h2><label class="button upload">Open files<input id="code-files" type="file" multiple accept=".py,.js,.ts,.html,.css,.json,.md,.txt,.csv,.yaml,.yml,.c,.cpp,.h,.rs,.sh"></label></div>
+        <div class="file-toolbar">
+          <label>File<select id="file-select" aria-label="Project file"></select></label>
+          <button id="new-file" type="button">New</button>
+          <button id="rename-file" type="button">Rename</button>
+          <button id="download-file" type="button">Download</button>
+          <button id="remove-file" type="button">Remove</button>
+        </div>
+        <label class="editor-label" for="source">Source</label>
+        <textarea id="source" spellcheck="false" maxlength="160000"></textarea>
+        <div class="frame-bar viewport-tools"><button id="check-code" type="button">Check syntax</button><span id="file-status" role="status"></span></div>
+      </section>
+      <section class="frame">
+        <div class="frame-bar"><h2>Jarvis coding assistant</h2><span class="instrument-label">LOCAL</span></div>
+        <form class="tool-form" id="code-form">
+          <label>What should Jarvis do?<textarea id="coding-request" rows="4" maxlength="1200" required placeholder="Explain this function or draft a test…"></textarea></label>
+          <p class="help">Select code to work on an excerpt. Use Draft edit to preview a replacement.</p>
+          <div class="inline">
+            <button type="submit" {% if not conversation %}disabled{% endif %}>Ask Jarvis</button>
+            <button id="draft-edit" class="primary" type="submit" {% if not conversation %}disabled{% endif %}>Draft edit</button>
+          </div>
+          {% if not conversation %}<p class="help">Load a local model to enable coding assistance.</p>{% endif %}
+        </form>
+        <pre id="code-output" aria-live="polite">Use a coding request or check the syntax of a Python or JSON file.</pre>
+        <div class="frame-bar viewport-tools">
+          <div class="inline"><button id="review-code" class="primary" type="button" disabled>Review edit</button><button id="copy-code" type="button" disabled>Copy reply</button></div>
+          <span id="edit-status" role="status"></span>
+        </div>
+      </section>
+    </section>
+    <section id="assembly" class="frame assembly" aria-label="Assembly" hidden>
+      <div class="frame-bar"><h2>Build plan</h2><button id="export-plan" type="button">Export plan</button></div>
+      <div class="assembly-content">
+        <div>
+          <h3 id="plan-title"></h3>
+          <p id="plan-summary" class="help"></p>
+          <p class="help">Track a manual build from design review through inspection. Export the plan alongside the current STL.</p>
+        </div>
+        <ol id="plan-steps"></ol>
+      </div>
+    </section>
+    <dialog id="edit-dialog" class="frame edit-dialog" aria-labelledby="edit-title">
+      <div class="frame-bar"><h2 id="edit-title">Review generated code</h2></div>
+      <div class="tool-form">
+        <p id="edit-target" class="help"></p>
+        <label>Proposed code<textarea id="edit-preview" rows="13" spellcheck="false"></textarea></label>
+        <p id="edit-validation" class="notice" role="status"></p>
+        <div class="inline"><button id="apply-edit" class="primary" type="button">Apply edit</button><button id="cancel-edit" type="button">Cancel</button></div>
+      </div>
+    </dialog>
+    <dialog id="file-dialog" class="frame" aria-label="Project file name">
+      <form id="new-file-form" class="tool-form">
+        <label>File name<input id="new-file-name" maxlength="120" placeholder="example.py" required></label>
+        <div class="inline"><button type="submit" class="primary" id="confirm-file">Create file</button><button id="cancel-new-file" type="button">Cancel</button></div>
+        <p id="new-file-status" class="notice" role="status"></p>
+      </form>
+    </dialog>
+  </main>
+</body>
+</html>
