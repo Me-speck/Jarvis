@@ -250,4 +250,4 @@ def command():
 
 
 if __name__ == "__main__":
-    app.run(host=os.getenv("JARVIS_HOST", "0.0.0.0"), port=5000)
+    app.run(host=os.getenv("JARVIS_HOST", "0.0.0.0"), port=int(os.getenv("JARVIS_PORT", "5000")))

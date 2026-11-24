@@ -7,100 +7,89 @@ open-ended conversation, a free model file. After setup, the app works offline.
 
 ## Install
 
-Jarvis is a browser app backed by a local server. Run the server on a MacBook
-or a supported Chromebook. An iPhone can use the same voice assistant and
-workbench through Safari while the server is running. No API keys or accounts
-are required to run Jarvis.
+**No Linux environment is required.** Run Jarvis directly on your MacBook.
+Your Chromebook and iPhone open it in Chrome or Safari on the same Wi-Fi.
+The Mac runs the voice and conversation models. The other devices need no
+terminal, Python, model downloads, or paid services. Keep the Mac awake and
+Jarvis running while you use it.
 
 ### MacBook
 
-1. Install [Homebrew](https://brew.sh/) and Apple's command line tools
-   (`xcode-select --install`) if needed.
+1. Install [Homebrew](https://brew.sh/) on the Mac. If Apple’s command line
+   tools are missing, open Terminal and run `xcode-select --install`.
 2. Open Terminal and run:
 
    ```sh
-   brew install python@3.12 ffmpeg cmake
    git clone https://github.com/Me-speck/Jarvis.git
    cd Jarvis
-   "$(brew --prefix python@3.12)/bin/python3.12" -m venv .venv
-   source .venv/bin/activate
-   python -m pip install -r requirements.txt -r requirements-voice.txt -r requirements-model.txt
-   python scripts/download_models.py
-   JARVIS_HOST=127.0.0.1 python -B app.py
+   ./start-jarvis.command
    ```
 
-3. Open `http://localhost:5000` in Safari or Chrome. Choose **Start voice
+   If you already cloned Jarvis, run `git pull` in the existing directory
+   first. The launcher installs the missing software and downloads the model
+   files on first launch. On later launches, run it again or double-click
+   **start-jarvis.command** in Finder.
+3. When the browser opens `http://localhost:8765`, choose **Start voice
    conversation** and allow microphone access. Leave Terminal open while
    using Jarvis.
 
-### Chromebook
+The launcher defaults to 8765 to avoid conflicts with macOS services on port
+5000. If you already used Jarvis at `http://localhost:5000`, run
+`JARVIS_PORT=5000 ./start-jarvis.command` to keep using that browser workspace
+if the port is free.
 
-1. In ChromeOS Settings, enable **Linux development environment** under
-   **About ChromeOS → Developers**. If your Chromebook is managed or Linux
-   is unavailable, use Chrome as a client on the same Wi-Fi as a Jarvis host
-   and follow the trusted HTTPS steps below.
-2. In the Linux Terminal, run:
+### Share from the Mac over Wi-Fi
 
-   ```sh
-   sudo apt update
-   sudo apt install -y git python3 python3-venv python3-dev ffmpeg build-essential cmake
-   git clone https://github.com/Me-speck/Jarvis.git
-   cd Jarvis
-   python3 -m venv .venv
-   source .venv/bin/activate
-   python -m pip install -r requirements.txt -r requirements-voice.txt -r requirements-model.txt
-   python scripts/download_models.py
-   python -B app.py
-   ```
+Stop the local launcher with **Control-C**, then run this from the Jarvis
+folder on the Mac:
 
-3. In Chrome on the Chromebook, open `http://localhost:5000`, select
-   **Start voice conversation**, and allow microphone access. If ChromeOS
-   does not forward the port automatically, add Linux port **5000/TCP** in
-   **Settings → Developers → Linux development environment → Port forwarding**.
-   Keep the Linux Terminal running. Prefer a separate host on devices
-   without enough free memory or disk for the model files.
+```sh
+./start-jarvis.command --share
+```
+
+The launcher installs Caddy if needed and prints the HTTPS address and
+the location of the public certificate. If it chooses the wrong network
+interface, enter the Wi-Fi IP shown in the Mac’s Network settings. For example:
+
+```sh
+./start-jarvis.command --share 192.168.1.23
+```
+
+Use sharing on your own trusted network. It makes the app available to
+devices that can reach the Mac on TCP port 8443. If a Mac firewall prompt
+appears, allow Caddy on the local network. Transfer only the printed
+`root.crt` file from your Mac, never the private key. The trust step below
+is required for browser microphone access.
+
+### Chromebook without Linux
+
+1. Put the Chromebook on the same Wi-Fi as the Mac. Transfer the Mac’s
+   `root.crt` securely to your own Chromebook, such as on a USB drive.
+2. In Chrome, open `chrome://settings/certificates`. Under **Authorities**
+   or **Custom → Authorities**, import that certificate and allow it to
+   identify websites if asked. Only trust a certificate that you created on
+   your Mac. A school or employer may block certificate imports.
+3. Open the HTTPS address printed by the Mac launcher in Chrome. Choose
+   **Start voice conversation** and allow the microphone. Bookmark the
+   address for later. Keep the Jarvis launcher open on the Mac.
+
+This setup uses ChromeOS directly. A Chromebook by itself needs a different
+build to run the models entirely in the browser.
 
 ### iPhone
 
-The iPhone is the microphone, speaker, and display. A MacBook or Linux
-computer on the same trusted Wi-Fi runs the model. Mobile Safari needs
-**trusted HTTPS** to access the microphone. A plain HTTP LAN address can
-display the page but cannot start voice input.
+1. Put the iPhone on the same Wi-Fi as the Mac. AirDrop the printed
+   `root.crt` file from your Mac to your iPhone.
+2. Install the downloaded profile in **Settings**, then turn on full trust
+   for that certificate under **Settings → General → About → Certificate
+   Trust Settings**. Trust only the certificate you created on your Mac.
+3. Open the HTTPS address printed by the Mac launcher in Safari. Choose
+   **Start voice conversation** and allow the microphone. Use **Share → Add
+   to Home Screen** for a shortcut. Keep Jarvis visible while speaking.
 
-1. Set up Jarvis on the host and run it with
-   `JARVIS_HOST=127.0.0.1 python -B app.py`. Find the computer's Wi-Fi IP
-   address in its network settings. Keep the server on the trusted network.
-2. Install [Caddy](https://caddyserver.com/docs/install) on the host
-   (`brew install caddy` on macOS). Save a file named `Caddyfile` next to
-   the checkout, replacing `192.168.1.23` with the host's Wi-Fi IP:
-
-   ```caddyfile
-   https://192.168.1.23:8443 {
-       tls internal
-       reverse_proxy 127.0.0.1:5000
-   }
-   ```
-
-   From the directory containing that file, run
-   `caddy run --config Caddyfile` in a separate Terminal window. If needed,
-   allow TCP 8443 in the host's firewall for your local network only.
-3. Locate Caddy's data directory with `caddy environ` and find
-   `pki/authorities/local/root.crt` inside that directory. Transfer **only
-   the root certificate**, never the private key, to your own iPhone
-   securely, such as via AirDrop from your Mac. Install the downloaded
-   profile in **Settings**, then turn on full trust for that certificate
-   under **Settings → General → About → Certificate Trust Settings**.
-   Trust only a certificate you created on your own host. Remove it when
-   you stop using this setup.
-4. On the same Wi-Fi, open `https://192.168.1.23:8443` in Safari with your
-   host's actual IP. Use **Share → Add to Home Screen** to keep a shortcut,
-   then choose **Start voice conversation** and allow the microphone.
-   Keep Jarvis visible while speaking. The host must stay on and reachable.
-   If the host IP changes, update your Caddyfile and shortcut.
-
-A Chromebook using a separate Jarvis host can open the same HTTPS URL after
-trusting the host CA in Chrome's certificate settings. School or employer
-policy may control certificate installation.
+If the Mac’s Wi-Fi IP changes, use the new address printed by the launcher.
+Remove the Jarvis certificate trust from your devices when you stop using
+this setup.
 
 ### Models and Docker
 
